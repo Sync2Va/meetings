@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let promptCheckInterval; // Store interval for checking prompts
     const CORRECT_PASSCODE = 'sync2va';
     const HOUR_NOW = new Date().getHours();
-    let MEETING_START_TIME = '23:00:00';
+    let MEETING_START_TIME = '03:00:00';
     let isAuthenticated = false; // Track authentication state
     
     // Participant simulation variables
