@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const HOUR_NOW = new Date().getHours();
     let MEETING_START_TIME = '03:00:00';
     let isAuthenticated = false; // Track authentication state
+    let unreadAdminMessages = 0; // Track unread admin messages
     
     // Participant simulation variables
     let participantInterval;
@@ -579,6 +580,9 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         chatSidebar.classList.add('open');
+        // Reset unread count when chat is opened
+        unreadAdminMessages = 0;
+        updateMessageBadge();
     });
 
     closeChat.addEventListener('click', () => {
@@ -613,12 +617,38 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAdmin) {
             messageDiv.style.backgroundColor = '#4CAF50'; // Green background for admin messages
         }
-        messageDiv.textContent = message;
+
+        // Convert URLs to clickable links
+        const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
+        const linkedMessage = message.replace(urlRegex, (url) => {
+            // Add https:// if it's a www link
+            const href = url.startsWith('www.') ? `https://${url}` : url;
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+        
+        messageDiv.innerHTML = linkedMessage;
         
         messageContainer.appendChild(userIcon);
         messageContainer.appendChild(messageDiv);
         chatMessages.appendChild(messageContainer);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Update unread count for admin messages
+        if (isAdmin && !chatSidebar.classList.contains('open')) {
+            unreadAdminMessages++;
+            updateMessageBadge();
+        }
+    }
+
+    // Function to update message badge
+    function updateMessageBadge() {
+        const badge = document.getElementById('message-badge');
+        if (unreadAdminMessages > 0) {
+            badge.textContent = unreadAdminMessages;
+            badge.classList.add('show');
+        } else {
+            badge.classList.remove('show');
+        }
     }
 
     // Function to show typing indicator
