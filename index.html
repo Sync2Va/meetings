@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sync2VA FREE Webinar</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="meeting-container">
+        <!-- Join Meeting Overlay -->
+        <div class="join-overlay" id="join-overlay">
+            <div class="join-content">
+                <h2>Welcome to the Sync2VA Webinar</h2>
+                <div class="meeting-timer">
+                    <span id="meeting-timer">Meeting started: 00:00:00</span>
+                </div>
+                <div class="passcode-input">
+                    <input type="text" id="passcode-input" placeholder="Enter passcode">
+                    <p class="error-message" id="passcode-error"></p>
+                </div>
+                <button class="join-btn" id="join-btn">Join Meeting</button>
+            </div>
+        </div>
+
+        <!-- Main Video Area -->
+        <div class="video-container">
+            <div class="main-video">
+                <div class="video-wrapper">
+                    <div class="announcement-overlay">
+                        <div class="announcement-content">
+                            Welcome to Sync2VA Webinar! Please make sure your audio and video are working properly.
+                        </div>
+                    </div>
+                    <iframe id="main-video" 
+                        src="https://www.youtube.com/embed/MO_c5QC8K_I?autoplay=0&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&iv_load_policy=3&disablekb=1&playsinline=1&origin=*" 
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="user-camera-feed">
+                    <video id="user-video" autoplay playsinline></video>
+                </div>
+                <div class="reaction-effects"></div>
+                <div class="buffering-overlay" id="buffering-overlay">
+                    <div class="buffering-content">
+                        <img src="spinner-logo.png" alt="Loading" class="spinner-logo">
+                    </div>
+                </div>
+                <div class="video-overlay">
+                    <!-- <span class="participant-name">Sync2VA</span> -->
+                    <img src="sync2va-logo.png" alt="Sync2VA Logo" 
+                        style="
+                            position: absolute; 
+                            bottom: 10px; 
+                            right: 10px; 
+                            width: 150px; 
+                            height: auto;
+                            border-radius: 10px;
+                            z-index: 5;"
+                    >
+                
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="bottom-controls">
+            <button class="control-btn menu-btn" id="menu-btn">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div class="controls-menu" id="controls-menu">
+                <button class="control-btn" id="audio-btn" disabled>
+                    <i class="fas fa-microphone-slash"></i>
+                </button>
+                <button class="control-btn" id="camera-btn">
+                    <i class="fas fa-video-slash"></i>
+                </button>
+                <button class="control-btn" id="screen-share-btn" disabled>
+                    <i class="fas fa-desktop"></i>
+                </button>
+                <button class="control-btn" id="reaction-btn">
+                    <i class="far fa-smile"></i>
+                </button>
+                <button class="control-btn" id="participants-btn">
+                    <i class="fas fa-users"></i>
+                    <span class="participant-count"></span>
+                </button>
+                <button class="control-btn" id="chat-btn">
+                    <i class="fas fa-comment"></i>
+                </button>
+                <button class="control-btn end-meeting" id="end-meeting-btn">
+                    <i class="fas fa-phone-slash"></i>
+                    End
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Sidebar -->
+    <div class="chat-sidebar" id="chat-sidebar">
+        <div class="chat-header">
+            <h3>Sync2VA Message Center</h3>
+            <button class="close-chat" id="close-chat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be added here dynamically -->
+        </div>
+        <div class="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type a message...">
+            <button id="send-message">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
