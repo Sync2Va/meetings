@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let promptCheckInterval; // Store interval for checking prompts
     const CORRECT_PASSCODE = 'sync2va';
     const HOUR_NOW = new Date().getHours();
-    let MEETING_START_TIME = '19:50:00';
+    let MEETING_START_TIME = '08:00:00';
     let isAuthenticated = false; // Track authentication state
     let unreadAdminMessages = 0; // Track unread admin messages
     
@@ -54,6 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentParticipants = Math.floor(Math.random() * 11) + 25; // Initial count 25-35
     let isParticipantSimulationRunning = false;
     let maxParticipants = Math.floor(Math.random() * (380 - 350 + 1)) + 350; // Random max between 350-380
+
+    // Add these variables at the top with other state variables
+    let currentPasscode = '';
+    let replyCheckInterval = null;
+    let replyCheckTimeout = null;
 
     // Set initial participant count
     participantCount.textContent = currentParticipants;
@@ -309,7 +314,119 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Handle join meeting
+    // Function to store passcode
+    function storePasscode(passcode) {
+        currentPasscode = passcode;
+        // You could also store in sessionStorage as backup
+        sessionStorage.setItem('sync2va_passcode', passcode);
+    }
+
+    // Function to get stored passcode
+    function getStoredPasscode() {
+        return currentPasscode || sessionStorage.getItem('sync2va_passcode');
+    }
+
+    // Function to send message to API
+    async function sendMessageToApi(message) {
+        try {
+            const passcode = getStoredPasscode();
+            if (!passcode) {
+                console.error('No passcode found');
+                return false;
+            }
+
+            const response = await fetch('https://dashboard.sync2va.site/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    passcode: passcode,
+                    message: message
+                })
+            });
+
+            const data = await response.json();
+            return data.chat ? true : false;
+        } catch (error) {
+            console.error('Error sending message:', error);
+            return false;
+        }
+    }
+
+    // Function to check for reply
+    async function checkForReply() {
+        try {
+            const passcode = getStoredPasscode();
+            if (!passcode) {
+                console.error('No passcode found');
+                return null;
+            }
+
+            const response = await fetch(`https://dashboard.sync2va.site/api/chat/reply/${passcode}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+            return data.chat?.reply_message || null;
+        } catch (error) {
+            console.error('Error checking reply:', error);
+            return null;
+        }
+    }
+
+    // Function to start monitoring for replies
+    function startReplyMonitoring() {
+        // Clear any existing intervals/timeouts
+        if (replyCheckInterval) clearInterval(replyCheckInterval);
+        if (replyCheckTimeout) clearTimeout(replyCheckTimeout);
+
+        // Set up 10-minute timeout
+        replyCheckTimeout = setTimeout(() => {
+            if (replyCheckInterval) {
+                clearInterval(replyCheckInterval);
+                replyCheckInterval = null;
+            }
+        }, 10 * 60 * 1000); // 10 minutes
+
+        // Check every 10 seconds
+        replyCheckInterval = setInterval(async () => {
+            const reply = await checkForReply();
+            if (reply) {
+                // Add the reply message to chat
+                addMessage(reply, false, true);
+                
+                // Stop monitoring after receiving reply
+                clearInterval(replyCheckInterval);
+                clearTimeout(replyCheckTimeout);
+                replyCheckInterval = null;
+                replyCheckTimeout = null;
+            }
+        }, 10000); // 10 seconds
+    }
+
+    // Modify the updatePasscodeStatus function
+    async function updatePasscodeStatus(passcode, status) {
+        try {
+            const response = await fetch(`https://dashboard.sync2va.site/api/passcode/${passcode}/${status}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            console.log(`Passcode status updated to ${status}:`, data);
+            return true;
+        } catch (error) {
+            console.error(`Error updating passcode status to ${status}:`, error);
+            return false;
+        }
+    }
+
+    // Modify handleJoinMeeting function to include status update
     async function handleJoinMeeting() {
         const enteredPasscode = passcodeInput.value.trim();
         
@@ -318,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
         
         try {
-            const response = await fetch(`https://sync2va.iligan-new.life/api/meeting/${enteredPasscode}`);
+            const response = await fetch(`https://dashboard.sync2va.site/api/meeting/${enteredPasscode}`);
             const data = await response.json();
             
             if (data.error) {
@@ -328,12 +445,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 passcodeInput.value = '';
                 passcodeInput.focus();
             } else {
-                isAuthenticated = true; // Set authentication flag
+                isAuthenticated = true;
                 // Store meeting prompts
                 meetingPrompts = data.meeting.prompts.map(prompt => ({
                     ...prompt,
-                    sent: false // Add sent flag to track if message was sent
+                    sent: false
                 }));
+
+                // Store the passcode and update status
+                storePasscode(enteredPasscode);
+                await updatePasscodeStatus(enteredPasscode, 'join');
 
                 // Set meeting start time from API response (using only the time portion)
                 const meetingStartDateTime = new Date(data.meeting.start);
@@ -677,29 +798,22 @@ document.addEventListener('DOMContentLoaded', () => {
         container.remove();
     }
 
-    // Function to handle sending messages
+    // Modify the existing sendMessage function
     function sendMessage() {
         const message = chatInput.value.trim();
         if (message) {
+            // Add message to chat UI
             addMessage(message, true);
+            
+            // Send message to API
+            sendMessageToApi(message).then(success => {
+                if (success) {
+                    // Start monitoring for replies
+                    startReplyMonitoring();
+                }
+            });
+            
             chatInput.value = '';
-            
-            // Random delay before showing typing indicator (3-10 seconds)
-            const typingDelay = Math.floor(Math.random() * (10000 - 3000 + 1)) + 3000;
-            
-            //CHAT RESPONSE DISABLED FOR NOW
-            // setTimeout(() => {
-            //     // Show typing indicator
-            //     const typingContainer = showTypingIndicator();
-                
-            //     // Random delay for the actual response (3-10 seconds)
-            //     const responseDelay = Math.floor(Math.random() * (10000 - 3000 + 1)) + 3000;
-                
-            //     setTimeout(() => {
-            //         removeTypingIndicator(typingContainer);
-            //         addMessage('This is a simulated response to: ' + message);
-            //     }, responseDelay);
-            // }, typingDelay);
         }
     }
 
@@ -717,22 +831,52 @@ document.addEventListener('DOMContentLoaded', () => {
     addMessage('Welcome to Sync2VA Message Center! Feel free to send a message.');
 
     // End meeting
-    endMeetingBtn.addEventListener('click', () => {
+    endMeetingBtn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to end the meeting?')) {
+            const passcode = getStoredPasscode();
+            if (passcode) {
+                await updatePasscodeStatus(passcode, 'leave');
+            }
+
+            // Clear intervals and reset state
             clearInterval(participantInterval);
             isParticipantSimulationRunning = false;
             currentParticipants = 0;
             participantCount.textContent = '0';
             mainVideo.style.opacity = '0';
+            
             // Reset the video to non-autoplay state
             const currentSrc = mainVideo.src;
             mainVideo.src = currentSrc.replace('autoplay=1', 'autoplay=0');
+            
             // Show the join overlay again
             joinOverlay.style.display = 'flex';
+            
             // Hide buffering overlay
             bufferingOverlay.classList.remove('active');
             isBuffering = false;
+            
+            // Clear stored passcode
+            sessionStorage.removeItem('sync2va_passcode');
+            currentPasscode = '';
+            
             console.log('Meeting ended');
+        }
+    });
+
+    // Add window unload handler to update status when user leaves unexpectedly
+    window.addEventListener('beforeunload', async (event) => {
+        const passcode = getStoredPasscode();
+        if (passcode) {
+            // We need to use synchronous code here due to beforeunload constraints
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `https://dashboard.sync2va.site/api/passcode/${passcode}/leave`, false);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            try {
+                xhr.send();
+            } catch (error) {
+                console.error('Error updating passcode status on page unload:', error);
+            }
         }
     });
 
