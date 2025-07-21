@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let participantInterval;
     let currentParticipants = Math.floor(Math.random() * 11) + 25; // Initial count 25-35
     let isParticipantSimulationRunning = false;
-    let maxParticipants = Math.floor(Math.random() * (380 - 350 + 1)) + 350; // Random max between 350-380
+    let maxParticipants = Math.floor(Math.random() * (200 - 150 + 1)) + 150; // Random max between 350-380
 
     // Add these variables at the top with other state variables
     let currentPasscode = '';
