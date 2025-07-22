@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const data = await response.json();
-            return data.chat?.reply_message || null;
+            return data.chat || null;
         } catch (error) {
             console.error('Error checking reply:', error);
             return null;
@@ -394,10 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check every 10 seconds
         replyCheckInterval = setInterval(async () => {
-            const reply = await checkForReply();
-            if (reply) {
-                // Add the reply message to chat
-                addMessage(reply, false, true);
+            const replyData = await checkForReply();
+            if (replyData && replyData.reply_message) {
+                // Add the reply message to chat with user_name
+                addMessage(replyData.reply_message, false, true, replyData.user_name);
                 
                 // Stop monitoring after receiving reply
                 clearInterval(replyCheckInterval);
@@ -720,18 +720,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Function to add a message to the chat
-    function addMessage(message, isSent = false, isAdmin = false) {
+    function addMessage(message, isSent = false, isAdmin = false, userName = null) {
         const messageContainer = document.createElement('div');
         messageContainer.className = `message-container ${isSent ? 'sent' : 'received'}`;
         
-        const userIcon = document.createElement('div');
-        userIcon.className = 'user-icon';
-        if (isAdmin) {
-            userIcon.innerHTML = `<i class="fas fa-user-shield"></i>`;
-            userIcon.style.backgroundColor = '#4CAF50'; // Green color for admin
+        // Add sender name label
+        const senderLabel = document.createElement('div');
+        senderLabel.className = 'sender-label';
+        if (isSent) {
+            senderLabel.innerHTML = '<i class="fas fa-user"></i> YOU';
+            senderLabel.style.color = '#007bff';
+        } else if (isAdmin) {
+            const displayName = userName || 'Admin';
+            senderLabel.innerHTML = `<i class="fas fa-user-shield"></i> ${displayName}`;
+            senderLabel.style.color = '#4CAF50';
         } else {
-            userIcon.innerHTML = `<i class="fas fa-user"></i>`;
+            senderLabel.innerHTML = '<i class="fas fa-user"></i> USER_NAME';
+            senderLabel.style.color = '#666';
         }
+        
+        // const userIcon = document.createElement('div');
+        // userIcon.className = 'user-icon';
+        // if (isAdmin) {
+        //     userIcon.innerHTML = `<i class="fas fa-user-shield"></i>`;
+        //     userIcon.style.backgroundColor = '#4CAF50'; // Green color for admin
+        // } else {
+        //     userIcon.innerHTML = `<i class="fas fa-user"></i>`;
+        // }
         
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message';
@@ -749,7 +764,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         messageDiv.innerHTML = linkedMessage;
         
-        messageContainer.appendChild(userIcon);
+        messageContainer.appendChild(senderLabel);
+        // messageContainer.appendChild(userIcon);
         messageContainer.appendChild(messageDiv);
         chatMessages.appendChild(messageContainer);
         chatMessages.scrollTop = chatMessages.scrollHeight;

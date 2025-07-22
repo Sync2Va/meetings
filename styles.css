@@ -753,6 +753,26 @@ body {
     align-items: flex-end;
 }
 
+.sender-label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.message-container.sent .sender-label {
+    align-self: flex-end;
+}
+
+.message-container.received .sender-label {
+    align-self: flex-start;
+}
+
 .user-icon {
     width: 20px;
     height: 20px;
