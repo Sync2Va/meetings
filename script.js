@@ -456,12 +456,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 storePasscode(enteredPasscode);
                 await updatePasscodeStatus(enteredPasscode, 'join');
 
-                // Set meeting start time from API response (using only the time portion)
+                // Set meeting start and end times from API response
                 const meetingStartDateTime = new Date(data.meeting.start);
+                const meetingEndDateTime = new Date(data.meeting.end);
+                
+                // Calculate total duration in seconds
+                const meetingDurationSeconds = Math.floor((meetingEndDateTime - meetingStartDateTime) / 1000);
+                
+                // Set meeting start time for display
                 const meetingStartTimeStr = meetingStartDateTime.toTimeString().split(' ')[0]; // Get HH:MM:SS
                 MEETING_START_TIME = meetingStartTimeStr;
                 
+                // Start monitoring meeting duration
+                const durationCheckInterval = setInterval(() => {
+                    const currentElapsedSeconds = getElapsedSeconds();
+                    if (currentElapsedSeconds >= meetingDurationSeconds) {
+                        // Clear all intervals
+                        clearInterval(durationCheckInterval);
+                        clearInterval(participantInterval);
+                        clearInterval(promptCheckInterval);
+                        if (replyCheckInterval) clearInterval(replyCheckInterval);
+                        if (replyCheckTimeout) clearTimeout(replyCheckTimeout);
+                        
+                        // Refresh the page
+                        window.location.reload();
+                    }
+                }, 1000); // Check every second
+                
                 console.log('Meeting start time:', MEETING_START_TIME);
+                console.log('Meeting start:', meetingStartDateTime);
+                console.log('Meeting end:', meetingEndDateTime);
+                console.log('Meeting duration (seconds):', meetingDurationSeconds);
                 console.log('Prompts:', meetingPrompts);
 
                 // Send any prompts that should have already been sent
